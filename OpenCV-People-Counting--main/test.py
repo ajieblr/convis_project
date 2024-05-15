@@ -156,7 +156,7 @@ elif option == "Webcam":
     run = st.checkbox('Run Webcam')
     FRAME_WINDOW = st.image([])
     cap = cv2.VideoCapture(0)
-    process_video(cap)
+    # process_video(cap)
     
     while run:
         ret, frame = cap.read()
