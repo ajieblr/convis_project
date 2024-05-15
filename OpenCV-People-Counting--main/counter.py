@@ -2,7 +2,7 @@
 import numpy as np
 import cv2
 import Person
-import time
+
 
 cnt_up = 0
 cnt_down = 0
@@ -12,9 +12,7 @@ state = 0
 back = None
 
 # Taking the video input from laptop webcam
-cap = cv2.VideoCapture(0)
-
-# Video output settings
+cap = cv2.VideoCapture("test3.mp4")
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 out = cv2.VideoWriter('output1.avi', fourcc, 5, (640, 480))
 
@@ -159,12 +157,6 @@ while (cap.isOpened()):
     cv2.putText(frame, str_down, (20, 100), font,
                 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     out.write(frame)
-    cv2.imshow('Counting', frame)
-
-    # Press ESC to exit
-    k = cv2.waitKey(30) & 0xff
-    if k == 27:
-        break
 
 # Closing
 cap.release()

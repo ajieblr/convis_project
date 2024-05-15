@@ -52,10 +52,10 @@ while(1):
         img = cv2.line(img, (width/2,0), (width/2,600), (0,0,255),4)
         for i in range(1,n):
                 area=cv2.contourArea(contours[i])
-                print area
+                print(area)
                 if(area>10000 and area<25000):
                     m=area
-                    print m
+                    print (m)
                     cnt=i
 
                     M=cv2.moments(contours[cnt])

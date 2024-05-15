@@ -2,7 +2,6 @@
 import numpy as np
 import cv2
 import Person
-import time
 
 
 cnt_up = 0
@@ -16,10 +15,6 @@ back = None
 cap = cv2.VideoCapture("test3.mp4")
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 out = cv2.VideoWriter('output1.avi', fourcc, 5, (640, 480))
-
-
-# cap.set(3,160) #Width
-# cap.set(4,120) #Height
 
 # Print the capture properties to console
 for i in range(19):
@@ -38,8 +33,6 @@ line_down = int(4*(h/6))
 up_limit = int(.5*(h/6))
 down_limit = int(4.5*(h/6))
 
-# print "Red line y:",str(line_down)
-# print "Blue line y:", str(line_up)
 line_down_color = (255, 0, 0)
 line_up_color = (0, 0, 255)
 pt1 = [0, line_down]
@@ -81,12 +74,7 @@ while (cap.isOpened()):
 
     ret, frame = cap.read()
     frame = frame[:, 20:]
-# frame = image.array
 
-    # for i in persons:
-    #     print i.age_one() #age every person one frame
-
-    # Apply background subtraction
     fgmask = fgbg.apply(frame)
     fgmask2 = fgbg.apply(frame)
 
@@ -109,35 +97,13 @@ while (cap.isOpened()):
         print(('UP:'), cnt_up+count_up)
         print(('DOWN:'), cnt_down+count_down)
         break
-    #################
-    #   CONTOURS   #
-    #################
-
     # RETR_EXTERNAL returns only extreme outer flags. All child contours are left behind.
     contours0, hierarchy = cv2.findContours(
         mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for cnt in contours0:
         rect = cv2.boundingRect(cnt)
-        # print rect_co
-        # if rect[2] > 100:
-        #     if rect[1]!=0:
-        #         rect_co.append(rect[1])
-        #     if len(rect_co)>=2:
-        #         if (rect_co[-1]-rect_co[-2]) > 0:
-        #             count_down = rect[2]/60
-        #             count_up = 0
-        #             print 'down' ,count_down
-        #         elif (rect_co[-1]-rect_co[-2]) < 0:
-        #             count_up =  rect[2]/60
-        #             count_down = 0
-        #             print 'up',count_up
-
-        #     continue
         area = cv2.contourArea(cnt)
         if area > areaTH:
-            #################
-            #   TRACKING    #
-            #################
 
             # Missing conditions for multipersons, outputs and screen entries
             M = cv2.moments(cnt)
@@ -186,72 +152,8 @@ while (cap.isOpened()):
                     p = Person.MyPerson(pid, cx, cy, max_p_age)
                     persons.append(p)
                     pid += 1
-            # new = True
-            # print cy
-            # if cy in range(up_limit,down_limit):
-            #     for i in persons:
-            #         if abs(cx-i.getX()) <= w and abs(cy-i.getY()) <= h:
-            #             # the object is close to one that has already been detected before
-            #             new = False
-            #             i.updateCoords(cx,cy)
-            #             val = i.getTracks()   #update coordinates in the object and resets age
-            #             print val
-
-            #     # print new
-            #     if new == True:
-            #         p = Person.MyPerson(pid,cx,cy, max_p_age)
-            #         persons.append(p)
-            #         pid += 1
-            #     # print 'person length',len(persons)
-            #     if len(val)>=2:
-            #         if (val[-1][1]-val[-2][1]) > 0:
-            #             cnt_down += 1;
-            #             state='1'
-            #             getdir = 'down'
-            #             # print "ID:",i.getId(),'crossed going up at',time.strftime("%c")
-            #         elif (val[-1][1]-val[-2][1]) < 0:
-            #             cnt_up += 1;
-            #             state = '1'
-            #             getdir = 'up'
-            #             # print "ID:",i.getId(),'crossed going down at',time.strftime("%c")
-            #         val = []
-            #         if state == '1':
-            #                 if getdir == 'down':
-            #                     done=True
-            #                 elif getdir == 'up':
-            #                     done = True
-            #         if done:
-            #              #get out of the people list
-            #             j=persons[0]
-            #             # print j
-            #             index = persons.index(j)
-            #             persons.pop(index)
-            #             # print "delete"
-            #             del j     #free the memory of i
-            #################
-            #   DRAWINGS     #
-            #################
             cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
             img = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 1)
-            # cv2.drawContours(frame, cnt, -1, (0,255,0), 3)
-
-    # END for cnt in contours0
-
-    #########################
-    # DRAWING TRAJECTORIES  #
-    #########################
-    # for i in persons:
-# if len(i.getTracks()) >= 2:
-# pts = np.array(i.getTracks(), np.int32)
-# pts = pts.reshape((-1,1,2))
-# frame = cv2.polylines(frame,[pts],False,i.getRGB())
-# if i.getId() == 9:
-# print str(i.getX()), ',', str(i.getY())
-        # cv2.putText(frame, str(i.getId()),(i.getX(),i.getY()),font,0.3,i.getRGB(),1,cv2.LINE_AA)
-
-    #################
-    # DISPLAY ON FRAME    #
-    #################
     str_up = 'UP: ' + str(cnt_up+count_up)
     str_down = 'DOWN: ' + str(cnt_down+count_down)
     frame = cv2.polylines(frame, [pts_L1], False, line_down_color, thickness=2)

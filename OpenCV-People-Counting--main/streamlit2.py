@@ -2,23 +2,29 @@ import streamlit as st
 import numpy as np
 import cv2
 import tempfile
-from PIL import Image
-from datetime import datetime
 import os
 import Person
 
 def main():
     st.title("People Counter App")
 
-    uploaded_file = st.file_uploader("Upload video", type=["mp4"])
+    # Tambahkan sidebar
+    st.sidebar.title("Pengaturan")
+    uploaded_file = st.sidebar.file_uploader("Upload video", type=["mp4"])
+    
     if uploaded_file is not None:
         # Save the uploaded file to a temporary directory
-        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp_file:
             tmp_file.write(uploaded_file.read())
             uploaded_video_path = tmp_file.name
-
-        if st.button("Process Video"):
-            process_video(uploaded_video_path)
+        
+        if st.sidebar.button("Process Video"):
+            output_video_path = process_video(uploaded_video_path)
+            if output_video_path:
+                with open(output_video_path, 'rb') as video_file:
+                    st.video(video_file.read())
+            else:
+                st.error("Video processing failed.")
 
 def process_video(video_path):
     cnt_up = 0
@@ -29,28 +35,29 @@ def process_video(video_path):
     back = None
 
     cap = cv2.VideoCapture(video_path)
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter('output.avi', fourcc, 5, (640, 480))
-
-    # cap.set(3,160) #Width
-    # cap.set(4,120) #Height
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    
+    # Buat file video output sementara
+    temp_output = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
+    output_path = temp_output.name
+    out = cv2.VideoWriter(output_path, fourcc, 5, (640, 480))
 
     # Print the capture properties to console
     for i in range(19):
         print(i, cap.get(i))
 
-    w = cap.get(3)
-    h = cap.get(4)
-    frameArea = h*w
-    areaTH = frameArea/300
+    w = int(cap.get(3))
+    h = int(cap.get(4))
+    frameArea = h * w
+    areaTH = frameArea / 300
     print(('Area Threshold'), areaTH)
 
     # Lines coordinate for counting
-    line_up = int(1*(h/6))
-    line_down = int(4*(h/6))
+    line_up = int(1 * (h / 6))
+    line_down = int(4 * (h / 6))
 
-    up_limit = int(.5*(h/6))
-    down_limit = int(4.5*(h/6))
+    up_limit = int(.5 * (h / 6))
+    down_limit = int(4.5 * (h / 6))
 
     line_down_color = (255, 0, 0)
     line_up_color = (0, 0, 255)
@@ -124,24 +131,24 @@ def process_video(video_path):
             if area > areaTH:
 
                 M = cv2.moments(cnt)
-                cx = int(M['m10']/M['m00'])
-                cy = int(M['m01']/M['m00'])
+                cx = int(M['m10'] / M['m00'])
+                cy = int(M['m01'] / M['m00'])
                 x, y, w, h = cv2.boundingRect(cnt)
 
                 new = True
                 if cy in range(up_limit, down_limit):
                     for i in persons:
-                        if abs(cx-i.getX()) <= w and abs(cy-i.getY()) <= h:
+                        if abs(cx - i.getX()) <= w and abs(cy - i.getY()) <= h:
                             new = False
                             i.updateCoords(cx, cy)
                             if i.going_UP(line_down, line_up) == True:
                                 if w > 100:
-                                    count_up = w/60
+                                    count_up = w / 60
                                 else:
                                     cnt_up += 1
                             elif i.going_DOWN(line_down, line_up) == True:
                                 if w > 100:
-                                    count_down = w/60
+                                    count_down = w / 60
                                 else:
                                     cnt_down += 1
                             break
@@ -161,10 +168,10 @@ def process_video(video_path):
                         pid += 1
 
                 cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
-                img = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 1)
+                img = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 1)
 
-        str_up = 'UP: ' + str(cnt_up+count_up)
-        str_down = 'DOWN: ' + str(cnt_down+count_down)
+        str_up = 'UP: ' + str(cnt_up + count_up)
+        str_down = 'DOWN: ' + str(cnt_down + count_down)
         frame = cv2.polylines(frame, [pts_L1], False, line_down_color, thickness=2)
         frame = cv2.polylines(frame, [pts_L2], False, line_up_color, thickness=2)
         frame = cv2.polylines(frame, [pts_L3], False, (255, 255, 255), thickness=1)
@@ -172,15 +179,12 @@ def process_video(video_path):
         cv2.putText(frame, str_up, (20, 70), font, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
         cv2.putText(frame, str_down, (20, 100), font, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
         out.write(frame)
-        cv2.imshow('Counting', frame)
-
-        k = cv2.waitKey(30) & 0xff
-        if k == 27:
-            break
 
     cap.release()
-    cv2.waitKey()
+    out.release()
     cv2.destroyAllWindows()
+    
+    return output_path
 
 if __name__ == "__main__":
     main()
